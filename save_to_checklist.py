@@ -1,41 +1,58 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
+from openpyxl.utils import get_column_letter
 from datetime import datetime
 from form_tracker import get_next_form_number
 
-def save_to_checklist(content: str, filename: str = "Test_Case_Listesi.xlsx", revision: str = "A") -> None:
+def save_to_checklist(text: str, filename: str, revision: str = "A") -> None:
     wb = Workbook()
     ws = wb.active
-    ws.title = "Test Cases"
+    ws.title = "Test Checklist"
 
-    # Üst Bilgi
-    ws.merge_cells("A1:E1")
-    ws["A1"] = f"FRM-TST-{revision} | Test Checklist | {datetime.today().strftime('%d.%m.%Y')}"
-    ws["A1"].font = Font(bold=True, size=12)
-    ws["A1"].alignment = Alignment(horizontal="center")
+    # 🔢 Form numarası
+    form_number = get_next_form_number("testcase")
 
-    row_start = 3  # veri tablosu bu satırdan başlar
+    # 📋 Üst Bilgi Satırları
+    ws.append(["Form Adı", "Test Senaryo Kontrol Listesi"])
+    ws.append(["Form Numarası", f"FRM-TST-{form_number}"])
+    ws.append(["Revizyon", revision])
+    ws.append(["Tarih", datetime.today().strftime("%d.%m.%Y")])
+    ws.append([])  # boş satır
 
-    # Satırları hazırla
-    lines = content.strip().splitlines()
-    if not lines or "|" not in lines[0]:
-        raise ValueError("GPT'den gelen çıktı uygun formatta değil.")
+    # 📌 Başlık Satırı (güncellenmiş sütun isimleri)
+    ws.append(["Test Case No", "Test Adımı", "Beklenen Sonuç", "Ön Koşul", "Test Tipi"])
 
-    headers = [cell.strip() for cell in lines[0].split("|") if cell.strip()]
-    ws.append(headers)
+    # 📄 İçerik: "Test Adımları ve Beklenen Sonuçlar" kısmından itibaren işlenir
+    processing = False
+    for line in text.splitlines():
+        if "Test Adımları ve Beklenen Sonuçlar" in line:
+            processing = True
+            continue
+        if processing and line.strip():
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 5:
+                ws.append(parts[:5])
+            else:
+                ws.append(parts + [""] * (5 - len(parts)))
 
-    for row in lines[2:]:  # başlık ve ayırıcıyı geç
-        if "|" in row:
-            cells = [cell.strip() for cell in row.split("|") if cell.strip()]
-            if len(cells) == len(headers):
-                ws.append(cells)
+    # 🎨 Stil: Üst bilgi + başlık satırları kalın ve ortalanmış
+    for row in ws.iter_rows(min_row=1, max_row=6):
+        for cell in row:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
 
-    # Stil
-    for col in ws.columns:
-        max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
-        col_letter = col[0].column_letter
-        ws.column_dimensions[col_letter].width = max_len + 5
+    # 🔧 Sütun genişlikleri otomatik ayarla
+    for i, col in enumerate(ws.columns, start=1):
+        max_length = 0
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        col_letter = get_column_letter(i)
+        ws.column_dimensions[col_letter].width = max_length + 5
 
-    # Kaydet
+    # 💾 Kaydet
     wb.save(filename)
     print(f"✅ '{filename}' başarıyla kaydedildi.")
