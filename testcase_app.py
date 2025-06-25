@@ -1,36 +1,55 @@
-from openpyxl import Workbook
-from openpyxl.styles import Font
-from datetime import datetime
+# generate_testcases.py
+import openai
+import streamlit as st
 
-def save_to_checklist(test_cases: list, filename: str, revision: str = "A") -> None:
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Test Checklist"
+api_key = st.secrets["OPENAI_API_KEY"]
+client = openai.OpenAI(api_key=api_key)
 
-    # Üst Bilgi
-    ws["A1"] = "Form Adı:"
-    ws["B1"] = "Test Senaryosu Kontrol Listesi"
-    ws["A2"] = "Form No:"
-    ws["B2"] = "FRM-TST-001"
-    ws["A3"] = "Revizyon:"
-    ws["B3"] = revision
-    ws["A4"] = "Tarih:"
-    ws["B4"] = datetime.today().strftime("%d.%m.%Y")
 
-    # Başlıklar
-    ws.append([])
-    ws.append(["NO", "TEST KOŞULU", "TEST AÇIKLAMASI", "TEST SENARYOSU", "BEKLENEN DURUM"])
-    for cell in ws[6]:
-        cell.font = Font(bold=True)
+def build_testcase_prompt(data: dict) -> str:
+    return f"""
+Özellik Adı: {data['feature_name']}
+Amaç: {data['test_purpose']}
+Test Tipi: {data['test_type']}
+Ön Koşullar: {data['preconditions']}
+Adımlar: {data['steps']}
+Beklenen Sonuçlar: {data['expected']}
 
-    # Veri Ekle
-    for i, case in enumerate(test_cases, start=1):
-        ws.append([
-            str(i),
-            case.get("condition", ""),
-            case.get("description", ""),
-            case.get("scenario", ""),   # ← DÜZELTİLDİ
-            case.get("expected", "")
-        ])
+Yukarıdaki bilgilerle aşağıdaki sütunları içeren bir test checklisti hazırla:
+- NO
+- TEST KOŞULU
+- TEST AÇIKLAMASI
+- TEST SENARYOSU
+- BEKLENEN DURUM
 
-    wb.save(filename)
+Her satır ayrı bir test case olacak şekilde yaz.
+"""
+
+
+def generate_test_cases(inputs: dict) -> list:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Deneyimli bir test mühendisi gibi test checklisti hazırla."},
+            {"role": "user", "content": build_testcase_prompt(inputs)}
+        ],
+        temperature=0.4,
+    )
+
+    content = response.choices[0].message.content.strip()
+    lines = content.splitlines()
+
+    test_cases = []
+    for line in lines:
+        if line.lower().startswith("no") or not line.strip():
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        if len(parts) >= 5:
+            test_cases.append({
+                "no": parts[0],
+                "condition": parts[1],
+                "description": parts[2],
+                "steps": parts[3],
+                "expected": parts[4]
+            })
+    return test_cases
