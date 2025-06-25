@@ -1,11 +1,10 @@
 import streamlit as st
-from generate_test_cases import generate_test_cases
 from save_to_checklist import save_to_checklist
+from datetime import datetime
 
-st.set_page_config(page_title="Test Checklist Oluşturucu", layout="wide")
-st.title("🧪 Test Checklist Oluşturucu")
+st.title("✅ Test Case Checklist Oluşturucu")
 
-st.markdown("Profesyonel bir test checklist'i oluşturmak için aşağıdaki alanları doldurun:")
+st.markdown("Aşağıdaki alanları doldurarak test checklist'ini oluşturabilirsiniz:")
 
 with st.form("testcase_form"):
     feature_name = st.text_input("1. Özellik Adı")
@@ -14,35 +13,28 @@ with st.form("testcase_form"):
     preconditions = st.text_area("4. Ön Koşullar")
     steps = st.text_area("5. Test Adımları")
     expected = st.text_area("6. Beklenen Sonuçlar")
-
     revision = st.text_input("Revizyon", value="A")
+
     submitted = st.form_submit_button("✅ Test Checklist Oluştur")
 
 if submitted:
-    with st.spinner("Test checklist'i oluşturuluyor..."):
-        data = {
-            "feature_name": feature_name,
-            "test_purpose": test_purpose,
-            "test_type": test_type,
-            "preconditions": preconditions,
+    with st.spinner("Test checklist oluşturuluyor..."):
+        filename = f"Test_Checklist_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+        test_data = [{
+            "condition": preconditions,
+            "description": test_purpose,
             "steps": steps,
-            "expected": expected,
-        }
-        output_text = generate_test_cases(data)
+            "expected": expected
+        }]
 
-        # Başlığı sadece bir kere ekle
-        lines = output_text.strip().splitlines()
-        if lines[0].startswith("NO") and lines[1].startswith("NO"):
-            output_text = "\n".join([lines[0]] + lines[2:])
+        save_to_checklist(test_data, filename, revision=revision)
 
-        filename = f"Test_Checklist_{feature_name.replace(' ', '_')}.xlsx"
-        save_to_checklist(output_text, filename, revision=revision)
-
-        with open(filename, "rb") as file:
-            st.success("📄 Excel dosyası oluşturuldu!")
+        with open(filename, "rb") as f:
+            st.success("✅ Test checklist başarıyla oluşturuldu!")
             st.download_button(
-                label="📥 Excel olarak indir",
-                data=file,
+                label="📥 Excel Dosyasını İndir",
+                data=f,
                 file_name=filename,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
