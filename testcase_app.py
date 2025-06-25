@@ -11,9 +11,8 @@ with st.form("testcase_form"):
     feature_name = st.text_input("1. Özellik Adı")
     test_purpose = st.text_area("2. Testin Amacı")
     test_type = st.selectbox("3. Test Tipi", ["Fonksiyonel", "Performans", "Güvenlik", "Kullanılabilirlik", "Uyumluluk"])
-    preconditions = st.text_area("4. Ön Koşullar")
-    steps = st.text_area("5. Test Adımları")
-    expected = st.text_area("6. Beklenen Sonuçlar")
+    steps = st.text_area("4. Test Adımları")
+    expected = st.text_area("5. Beklenen Sonuçlar")
     revision = st.text_input("Revizyon", value="A")
 
     submitted = st.form_submit_button("✅ Test Checklist Oluştur")
@@ -23,7 +22,6 @@ if submitted:
         "name": feature_name,
         "purpose": test_purpose,
         "type": test_type,
-        "preconditions": preconditions,
         "steps": steps,
         "expected": expected
     }

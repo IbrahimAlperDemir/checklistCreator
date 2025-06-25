@@ -16,9 +16,6 @@ def build_testcase_prompt(data: dict) -> str:
 ### Test Tipi
 {data['test_type']}
 
-### Ön Koşullar
-{data['preconditions']}
-
 ### Test Adımları
 {data['steps']}
 
