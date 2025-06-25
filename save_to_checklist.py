@@ -19,15 +19,22 @@ def save_to_checklist(text: str, filename: str, revision: str = "A") -> None:
     ws.append(["Tarih", datetime.today().strftime("%d.%m.%Y")])
     ws.append([])  # boş satır
 
-    # 📄 İçerik
+    # 📌 Başlık Satırı (yeni sütun isimleri)
+    ws.append(["NO", "TEST KOŞULU", "TEST AÇIKLAMASI", "TEST SENARYOSU", "BEKLENEN DURUM"])
+
+    # 📄 İçerik (| ile ayrılmış satırları sütunlara böl)
     for line in text.splitlines():
         if line.strip():
-            ws.append([line.strip()])
+            if "|" in line:
+                parts = [p.strip() for p in line.split("|")]
+                ws.append(parts[:5] + [""] * (5 - len(parts)))  # eksik sütunları tamamla
+            else:
+                ws.append([line.strip()])
         else:
             ws.append([])
 
-    # 🎨 Stil: İlk 5 satır kalın ve ortalanmış
-    for row in ws.iter_rows(min_row=1, max_row=5):
+    # 🎨 Stil: Üst bilgi + başlık satırları kalın ve ortalanmış
+    for row in ws.iter_rows(min_row=1, max_row=6):
         for cell in row:
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal="center")
