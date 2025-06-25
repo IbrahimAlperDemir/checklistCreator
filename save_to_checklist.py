@@ -1,41 +1,49 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
+from openpyxl.utils import get_column_letter
 from datetime import datetime
 from form_tracker import get_next_form_number
 
-def save_to_checklist(content: str, filename: str = "Test_Case_Listesi.xlsx", revision: str = "A") -> None:
+def save_to_checklist(text: str, filename: str, revision: str = "A") -> None:
     wb = Workbook()
     ws = wb.active
-    ws.title = "Test Cases"
+    ws.title = "Test Checklist"
 
-    # Üst Bilgi
-    ws.merge_cells("A1:E1")
-    ws["A1"] = f"FRM-TST-{revision} | Test Checklist | {datetime.today().strftime('%d.%m.%Y')}"
-    ws["A1"].font = Font(bold=True, size=12)
-    ws["A1"].alignment = Alignment(horizontal="center")
+    # 🔢 Form numarası
+    form_number = get_next_form_number("testcase")
 
-    row_start = 3  # veri tablosu bu satırdan başlar
+    # 📋 Üst Bilgi Satırları
+    ws.append(["Form Adı", "Test Senaryo Kontrol Listesi"])
+    ws.append(["Form Numarası", f"FRM-TST-{form_number}"])
+    ws.append(["Revizyon", revision])
+    ws.append(["Tarih", datetime.today().strftime("%d.%m.%Y")])
+    ws.append([])  # boş satır
 
-    # Satırları hazırla
-    lines = content.strip().splitlines()
-    if not lines or "|" not in lines[0]:
-        raise ValueError("GPT'den gelen çıktı uygun formatta değil.")
+    # 📄 İçerik
+    for line in text.splitlines():
+        if line.strip():
+            ws.append([line.strip()])
+        else:
+            ws.append([])
 
-    headers = [cell.strip() for cell in lines[0].split("|") if cell.strip()]
-    ws.append(headers)
+    # 🎨 Stil: İlk 5 satır kalın ve ortalanmış
+    for row in ws.iter_rows(min_row=1, max_row=5):
+        for cell in row:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
 
-    for row in lines[2:]:  # başlık ve ayırıcıyı geç
-        if "|" in row:
-            cells = [cell.strip() for cell in row.split("|") if cell.strip()]
-            if len(cells) == len(headers):
-                ws.append(cells)
+    # 🔧 Sütun genişlikleri otomatik ayarla
+    for i, col in enumerate(ws.columns, start=1):
+        max_length = 0
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        col_letter = get_column_letter(i)
+        ws.column_dimensions[col_letter].width = max_length + 5
 
-    # Stil
-    for col in ws.columns:
-        max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
-        col_letter = col[0].column_letter
-        ws.column_dimensions[col_letter].width = max_len + 5
-
-    # Kaydet
+    # 💾 Kaydet
     wb.save(filename)
     print(f"✅ '{filename}' başarıyla kaydedildi.")
