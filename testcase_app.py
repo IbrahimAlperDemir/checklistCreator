@@ -3,9 +3,9 @@ import streamlit as st
 from generate_test_cases import generate_test_cases
 from save_to_checklist import save_to_checklist
 
-st.title("🧪 Test Case Checklist Oluşturucu")
+st.title("🧪 Checklist Creator")
 
-st.markdown("Aşağıdaki bilgileri doldurarak test case checklist'i oluşturabilirsiniz:")
+st.markdown("Aşağıdaki bilgileri doldurarak checklist'i oluşturabilirsiniz:")
 
 with st.form("testcase_form"):
     feature_name = st.text_input("1. Özellik Adı")
