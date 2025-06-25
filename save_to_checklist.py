@@ -1,49 +1,47 @@
 from openpyxl import Workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Font, Alignment
 from datetime import datetime
 
-def save_to_checklist(test_cases: list, filename: str = "Test_Checklist.xlsx", revision: str = "A") -> None:
+def save_to_checklist(text: str, filename: str = "Test_Checklist.xlsx", revision: str = "A") -> None:
     wb = Workbook()
     ws = wb.active
-    ws.title = "Test Checklist"
+    ws.title = "Test Cases"
 
-    # 📌 Üst Bilgi
-    ws["A1"] = "Form Adı:"
-    ws["B1"] = "Test Case Checklist"
+    # 🔰 Başlık bilgileri
+    ws["A1"] = "TEST CHECKLIST FORMU"
+    ws["A1"].font = Font(bold=True, size=14)
+    ws.merge_cells("A1:E1")
 
-    ws["A2"] = "Form Numarası:"
-    ws["B2"] = "FRM-TEST-001"
+    ws["A2"] = "Form No:"
+    ws["B2"] = "FRM-QA-001"
+    ws["A3"] = "Revizyon:"
+    ws["B3"] = revision
+    ws["A4"] = "Tarih:"
+    ws["B4"] = datetime.today().strftime("%d.%m.%Y")
 
-    ws["A3"] = "Versiyon:"
-    ws["B3"] = "1.0"
+    for cell in ["A2", "A3", "A4"]:
+        ws[cell].font = Font(bold=True)
 
-    ws["A4"] = "Hazırlayan:"
-    ws["B4"] = "Otomatik AI Sistem"
-
-    ws["A5"] = "Revizyon:"
-    ws["B5"] = revision
-
-    ws["A6"] = "Tarih:"
-    ws["B6"] = datetime.today().strftime("%d.%m.%Y")
-
-    # 📄 Başlıklar
+    # 📌 İçerik başlıkları
     headers = ["NO", "TEST KOŞULU", "TEST AÇIKLAMASI", "TEST SENARYOSU", "BEKLENEN DURUM"]
-    ws.append([])  # boş satır
+    ws.append([])
     ws.append(headers)
+    for col in ws.iter_cols(min_row=6, max_row=6, min_col=1, max_col=5):
+        for cell in col:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-    for cell in ws[8]:  # başlıklar satırı (8. satır çünkü 6 satır üst bilgi + 1 boşluk)
-        cell.font = Font(bold=True)
+    # 📤 Satırları ekle
+    lines = text.strip().split("\n")
+    start_index = 1 if "NO" in lines[0] else 0  # Başlık varsa atla
+    for line in lines[start_index:]:
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) == 5:
+            ws.append(parts)
 
-    # 📋 Test Verileri
-    for i, case in enumerate(test_cases, start=1):
-        ws.append([
-            str(i),
-            case.get("condition", ""),
-            case.get("description", ""),
-            case.get("steps", ""),
-            case.get("expected", "")
-        ])
+    # Sütun genişlikleri
+    column_widths = [5, 25, 25, 30, 30]
+    for i, width in enumerate(column_widths, start=1):
+        ws.column_dimensions[chr(64 + i)].width = width
 
-    # Kaydet
     wb.save(filename)
-    print(f"✅ '{filename}' başarıyla kaydedildi.")

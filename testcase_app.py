@@ -1,55 +1,41 @@
-# generate_testcases.py
-import openai
+# 1️⃣ testcase_app.py
 import streamlit as st
+from generate_test_cases import generate_test_cases
+from save_to_checklist import save_to_checklist
 
-api_key = st.secrets["OPENAI_API_KEY"]
-client = openai.OpenAI(api_key=api_key)
+st.title("🧪 Test Case Checklist Oluşturucu")
 
+st.markdown("Aşağıdaki bilgileri doldurarak test case checklist'i oluşturabilirsiniz:")
 
-def build_testcase_prompt(data: dict) -> str:
-    return f"""
-Özellik Adı: {data['feature_name']}
-Amaç: {data['test_purpose']}
-Test Tipi: {data['test_type']}
-Ön Koşullar: {data['preconditions']}
-Adımlar: {data['steps']}
-Beklenen Sonuçlar: {data['expected']}
+with st.form("testcase_form"):
+    feature_name = st.text_input("1. Özellik Adı")
+    test_purpose = st.text_area("2. Testin Amacı")
+    test_type = st.selectbox("3. Test Tipi", ["Fonksiyonel", "Performans", "Güvenlik", "Kullanılabilirlik", "Uyumluluk"])
+    preconditions = st.text_area("4. Ön Koşullar")
+    steps = st.text_area("5. Test Adımları")
+    expected = st.text_area("6. Beklenen Sonuçlar")
+    revision = st.text_input("Revizyon", value="A")
 
-Yukarıdaki bilgilerle aşağıdaki sütunları içeren bir test checklisti hazırla:
-- NO
-- TEST KOŞULU
-- TEST AÇIKLAMASI
-- TEST SENARYOSU
-- BEKLENEN DURUM
+    submitted = st.form_submit_button("✅ Test Checklist Oluştur")
 
-Her satır ayrı bir test case olacak şekilde yaz.
-"""
+if submitted:
+    data = {
+        "name": feature_name,
+        "purpose": test_purpose,
+        "type": test_type,
+        "preconditions": preconditions,
+        "steps": steps,
+        "expected": expected
+    }
+    checklist = generate_test_cases(data)
+    filename = f"Test_Checklist_{feature_name.replace(' ', '_')}.xlsx"
+    save_to_checklist(checklist, filename, revision=revision)
 
-
-def generate_test_cases(inputs: dict) -> list:
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "Deneyimli bir test mühendisi gibi test checklisti hazırla."},
-            {"role": "user", "content": build_testcase_prompt(inputs)}
-        ],
-        temperature=0.4,
-    )
-
-    content = response.choices[0].message.content.strip()
-    lines = content.splitlines()
-
-    test_cases = []
-    for line in lines:
-        if line.lower().startswith("no") or not line.strip():
-            continue
-        parts = [part.strip() for part in line.split("|")]
-        if len(parts) >= 5:
-            test_cases.append({
-                "no": parts[0],
-                "condition": parts[1],
-                "description": parts[2],
-                "steps": parts[3],
-                "expected": parts[4]
-            })
-    return test_cases
+    with open(filename, "rb") as file:
+        st.success("✅ Excel dosyası oluşturuldu!")
+        st.download_button(
+            label="📥 Excel olarak indir",
+            data=file,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
