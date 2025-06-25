@@ -29,6 +29,12 @@ if submitted:
             "expected": expected,
         }
         output_text = generate_test_cases(data)
+
+        # Başlığı sadece bir kere ekle
+        lines = output_text.strip().splitlines()
+        if lines[0].startswith("NO") and lines[1].startswith("NO"):
+            output_text = "\n".join([lines[0]] + lines[2:])
+
         filename = f"Test_Checklist_{feature_name.replace(' ', '_')}.xlsx"
         save_to_checklist(output_text, filename, revision=revision)
 
