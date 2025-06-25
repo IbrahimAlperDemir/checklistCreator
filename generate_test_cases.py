@@ -1,7 +1,7 @@
+# generate_test_cases.py
 import openai
 import streamlit as st
 
-# API key güvenli şekilde alınıyor
 api_key = st.secrets["OPENAI_API_KEY"]
 client = openai.OpenAI(api_key=api_key)
 
@@ -23,25 +23,18 @@ def build_testcase_prompt(data: dict) -> str:
 {data['expected']}
 
 ---
+Bu bilgilerden yola çıkarak aşağıdaki formatta test senaryoları oluştur:
 
-Yukarıdaki bilgilerle aşağıdaki sütunlara uygun şekilde 3 örnek test case üret:
-
-1. NO
-2. TEST KOŞULU
-3. TEST AÇIKLAMASI
-4. TEST SENARYOSU
-5. BEKLENEN DURUM
-
-Her bir test case için ayrı satırda olacak şekilde çıktıyı formatla. Tabloda sütun isimleri ilk satırda olsun.
+NO | TEST KOŞULU | TEST AÇIKLAMASI | TEST SENARYOSU | BEKLENEN DURUM
 """
 
 def generate_test_cases(inputs: dict) -> str:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "Deneyimli bir QA testi uzmanı gibi test senaryoları üret."},
+            {"role": "system", "content": "Profesyonel bir test uzmanı olarak test case checklist oluştur."},
             {"role": "user", "content": build_testcase_prompt(inputs)}
         ],
-        temperature=0.4,
+        temperature=0.3,
     )
     return response.choices[0].message.content.strip()
