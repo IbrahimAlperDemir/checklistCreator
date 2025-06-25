@@ -25,13 +25,11 @@ def save_to_checklist(text: str, filename: str, revision: str = "A") -> None:
     # 📄 İçerik (| ile ayrılmış satırları sütunlara böl)
     for line in text.splitlines():
         if line.strip():
-            if "|" in line:
-                parts = [p.strip() for p in line.split("|")]
-                ws.append(parts[:5] + [""] * (5 - len(parts)))  # eksik sütunları tamamla
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 5:
+                ws.append(parts[:5])
             else:
-                ws.append([line.strip()])
-        else:
-            ws.append([])
+                ws.append(parts + [""] * (5 - len(parts)))
 
     # 🎨 Stil: Üst bilgi + başlık satırları kalın ve ortalanmış
     for row in ws.iter_rows(min_row=1, max_row=6):
