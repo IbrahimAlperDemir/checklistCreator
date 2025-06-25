@@ -21,7 +21,8 @@ def save_to_checklist(text: str, filename: str = "Test_Case_Checklist.xlsx", rev
 
     # Başlık
     headers = ["NO", "TEST KOŞULU", "TEST AÇIKLAMASI", "TEST SENARYOSU", "BEKLENEN DURUM"]
-    ws.append(headers)
+    if ws.max_row == 1 and all(ws.cell(row=1, column=i + 1).value != headers[i] for i in range(len(headers))):
+        ws.append(headers)
 
     for row in test_cases:
         ws.append(row)
