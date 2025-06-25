@@ -19,12 +19,16 @@ def save_to_checklist(text: str, filename: str, revision: str = "A") -> None:
     ws.append(["Tarih", datetime.today().strftime("%d.%m.%Y")])
     ws.append([])  # boş satır
 
-    # 📌 Başlık Satırı (yeni sütun isimleri)
-    ws.append(["NO", "TEST KOŞULU", "TEST AÇIKLAMASI", "TEST SENARYOSU", "BEKLENEN DURUM"])
+    # 📌 Başlık Satırı (güncellenmiş sütun isimleri)
+    ws.append(["Test Case No", "Test Adımı", "Beklenen Sonuç", "Ön Koşul", "Test Tipi"])
 
-    # 📄 İçerik (| ile ayrılmış satırları sütunlara böl)
+    # 📄 İçerik: "Test Adımları ve Beklenen Sonuçlar" kısmından itibaren işlenir
+    processing = False
     for line in text.splitlines():
-        if line.strip():
+        if "Test Adımları ve Beklenen Sonuçlar" in line:
+            processing = True
+            continue
+        if processing and line.strip():
             parts = [p.strip() for p in line.split("|")]
             if len(parts) >= 5:
                 ws.append(parts[:5])
