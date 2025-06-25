@@ -2,8 +2,10 @@ import streamlit as st
 from generate_test_cases import generate_test_cases
 from save_to_checklist import save_to_checklist
 
-st.title("🧪 Test Case / Checklist Oluşturucu")
-st.markdown("Yeni bir özellik için test senaryolarınızı aşağıdan oluşturabilirsiniz.")
+st.set_page_config(page_title="Test Checklist Oluşturucu", layout="wide")
+st.title("🧪 Test Checklist Oluşturucu")
+
+st.markdown("Profesyonel bir test checklist'i oluşturmak için aşağıdaki alanları doldurun:")
 
 with st.form("testcase_form"):
     feature_name = st.text_input("1. Özellik Adı")
@@ -17,21 +19,21 @@ with st.form("testcase_form"):
     submitted = st.form_submit_button("✅ Test Checklist Oluştur")
 
 if submitted:
-    with st.spinner("Test senaryoları oluşturuluyor..."):
+    with st.spinner("Test checklist'i oluşturuluyor..."):
         data = {
             "feature_name": feature_name,
             "test_purpose": test_purpose,
             "test_type": test_type,
             "preconditions": preconditions,
             "steps": steps,
-            "expected": expected
+            "expected": expected,
         }
         output_text = generate_test_cases(data)
-        filename = "Test_Case_Listesi.xlsx"
+        filename = f"Test_Checklist_{feature_name.replace(' ', '_')}.xlsx"
         save_to_checklist(output_text, filename, revision=revision)
 
         with open(filename, "rb") as file:
-            st.success("✔️ Test checklist hazır!")
+            st.success("📄 Excel dosyası oluşturuldu!")
             st.download_button(
                 label="📥 Excel olarak indir",
                 data=file,

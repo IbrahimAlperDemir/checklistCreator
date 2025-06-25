@@ -1,43 +1,47 @@
-import openai
+from openai import OpenAI
 import streamlit as st
 
 api_key = st.secrets["OPENAI_API_KEY"]
-client = openai.OpenAI(api_key=api_key)
+client = OpenAI(api_key=api_key)
 
-def build_prompt(data: dict) -> str:
+def build_test_prompt(inputs: dict) -> str:
     return f"""
 ### Özellik Adı
-{data['feature_name']}
+{inputs['feature_name']}
 
 ### Testin Amacı
-{data['test_purpose']}
+{inputs['test_purpose']}
 
 ### Test Tipi
-{data['test_type']}
+{inputs['test_type']}
 
 ### Ön Koşullar
-{data['preconditions']}
+{inputs['preconditions']}
 
 ### Test Adımları
-{data['steps']}
+{inputs['steps']}
 
-### Beklenen Sonuç
-{data['expected']}
+### Beklenen Sonuçlar
+{inputs['expected']}
 
 ---
-Bu bilgilerle aşağıdaki formatta profesyonel test senaryoları üret:
+Yukarıdaki bilgilerle aşağıdaki alanlara uygun olarak test case checklist oluştur:
+- NO
+- TEST KOŞULU
+- TEST AÇIKLAMASI
+- TEST SENARYOSU
+- BEKLENEN DURUM
 
-| Test Case No | Test Adımı | Beklenen Sonuç | Ön Koşul | Test Tipi |
-|--------------|------------|----------------|----------|-----------|
+Sadece tablo formatında ve her satırda tek test olacak şekilde oluştur.
 """
 
 def generate_test_cases(inputs: dict) -> str:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "Profesyonel bir QA mühendisi gibi test case tablosu üret."},
-            {"role": "user", "content": build_prompt(inputs)}
+            {"role": "system", "content": "Tecrübeli bir QA uzmanı olarak profesyonel test case checklist'i oluştur."},
+            {"role": "user", "content": build_test_prompt(inputs)}
         ],
-        temperature=0.4,
+        temperature=0.3
     )
     return response.choices[0].message.content.strip()

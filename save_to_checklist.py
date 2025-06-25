@@ -1,58 +1,38 @@
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
-from datetime import datetime
-from form_tracker import get_next_form_number
+from openpyxl.styles import Alignment
+import re
 
-def save_to_checklist(text: str, filename: str, revision: str = "A") -> None:
+def parse_test_cases(text: str):
+    # Tablo yapısını satır satır parçala
+    lines = text.strip().split("\n")
+    parsed = []
+    for line in lines:
+        parts = [p.strip() for p in re.split(r"\||\t", line) if p.strip()]
+        if len(parts) >= 5:
+            parsed.append(parts[:5])
+    return parsed
+
+def save_to_checklist(text: str, filename: str = "Test_Case_Checklist.xlsx", revision: str = "A"):
+    test_cases = parse_test_cases(text)
     wb = Workbook()
     ws = wb.active
-    ws.title = "Test Checklist"
+    ws.title = "Test Cases"
 
-    # 🔢 Form numarası
-    form_number = get_next_form_number("testcase")
+    # Başlık
+    headers = ["NO", "TEST KOŞULU", "TEST AÇIKLAMASI", "TEST SENARYOSU", "BEKLENEN DURUM"]
+    ws.append(headers)
 
-    # 📋 Üst Bilgi Satırları
-    ws.append(["Form Adı", "Test Senaryo Kontrol Listesi"])
-    ws.append(["Form Numarası", f"FRM-TST-{form_number}"])
-    ws.append(["Revizyon", revision])
-    ws.append(["Tarih", datetime.today().strftime("%d.%m.%Y")])
-    ws.append([])  # boş satır
+    for row in test_cases:
+        ws.append(row)
 
-    # 📌 Başlık Satırı (güncellenmiş sütun isimleri)
-    ws.append(["Test Case No", "Test Adımı", "Beklenen Sonuç", "Ön Koşul", "Test Tipi"])
-
-    # 📄 İçerik: "Test Adımları ve Beklenen Sonuçlar" kısmından itibaren işlenir
-    processing = False
-    for line in text.splitlines():
-        if "Test Adımları ve Beklenen Sonuçlar" in line:
-            processing = True
-            continue
-        if processing and line.strip():
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) >= 5:
-                ws.append(parts[:5])
-            else:
-                ws.append(parts + [""] * (5 - len(parts)))
-
-    # 🎨 Stil: Üst bilgi + başlık satırları kalın ve ortalanmış
-    for row in ws.iter_rows(min_row=1, max_row=6):
-        for cell in row:
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal="center")
-
-    # 🔧 Sütun genişlikleri otomatik ayarla
-    for i, col in enumerate(ws.columns, start=1):
-        max_length = 0
+    # Genişlik ve hizalama
+    for col in ws.columns:
+        max_length = max(len(str(cell.value)) if cell.value else 0 for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(15, min(max_length + 5, 50))
         for cell in col:
-            try:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
-        col_letter = get_column_letter(i)
-        ws.column_dimensions[col_letter].width = max_length + 5
+            cell.alignment = Alignment(wrap_text=True, vertical='top')
 
-    # 💾 Kaydet
     wb.save(filename)
-    print(f"✅ '{filename}' başarıyla kaydedildi.")
+    print(f"✅ Excel dosyası '{filename}' olarak kaydedildi.")
